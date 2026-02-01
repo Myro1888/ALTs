@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { CoinAnalysis, Filters } from './types';
-import { fetchMarketData, fetchCoinDetails } from './api/coingecko';
+import { fetchAllMarketData, fetchCoinDetails } from './api/coingecko';
 import { analyzeCoins } from './utils/calculations';
 import { SummaryCards } from './components/SummaryCards';
 import { FiltersBar } from './components/Filters';
@@ -29,8 +29,10 @@ export default function App() {
     setProgress({ loaded: 0, total: 0, phase: 'Fetching market data...' });
 
     try {
-      const marketData = await fetchMarketData(1, 100);
-      setProgress({ loaded: 0, total: marketData.length, phase: 'Fetching coin details...' });
+      const marketData = await fetchAllMarketData((loaded, phase) => {
+        setProgress({ loaded, total: 0, phase });
+      });
+      setProgress({ loaded: 0, total: marketData.length, phase: `Fetching details for ${marketData.length} coins...` });
 
       const coinIds = marketData.map((c) => c.id);
       const detailData = await fetchCoinDetails(coinIds, (loaded, total) => {
