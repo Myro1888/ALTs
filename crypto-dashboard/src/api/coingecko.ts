@@ -71,33 +71,36 @@ export async function fetchCoinDetail(coinId: string): Promise<CoinDetailData> {
 
 export async function fetchCoinDetails(
   coinIds: string[],
-  onProgress?: (loaded: number, total: number) => void
+  onProgress?: (loaded: number, total: number) => void,
+  onBatchComplete?: (results: Map<string, CoinDetailData>) => void
 ): Promise<Map<string, CoinDetailData>> {
   const results = new Map<string, CoinDetailData>();
-  const batchSize = 5;
+  // CoinGecko free tier: ~10-30 req/min. Sequential requests with delay.
+  const batchDelay = 4000;
+  let consecutiveFailures = 0;
 
-  for (let i = 0; i < coinIds.length; i += batchSize) {
-    const batch = coinIds.slice(i, i + batchSize);
-    const promises = batch.map(async (id) => {
-      try {
-        const detail = await fetchCoinDetail(id);
-        return { id, detail };
-      } catch {
-        return { id, detail: null };
+  for (let i = 0; i < coinIds.length; i++) {
+    const id = coinIds[i];
+    try {
+      const detail = await fetchCoinDetail(id);
+      results.set(id, detail);
+      consecutiveFailures = 0;
+    } catch {
+      consecutiveFailures++;
+      if (consecutiveFailures >= 5) {
+        // Rate-limited hard — stop fetching
+        break;
       }
-    });
-
-    const batchResults = await Promise.all(promises);
-    for (const { id, detail } of batchResults) {
-      if (detail) {
-        results.set(id, detail);
-      }
+      // Back off on failure
+      await delay(batchDelay * consecutiveFailures);
+      continue;
     }
 
-    onProgress?.(Math.min(i + batchSize, coinIds.length), coinIds.length);
+    onProgress?.(i + 1, coinIds.length);
+    onBatchComplete?.(results);
 
-    if (i + batchSize < coinIds.length) {
-      await delay(1500);
+    if (i + 1 < coinIds.length) {
+      await delay(batchDelay);
     }
   }
 
