@@ -5,6 +5,7 @@ import { analyzeCoins } from './utils/calculations';
 import { SummaryCards } from './components/SummaryCards';
 import { FiltersBar } from './components/Filters';
 import { CoinTable } from './components/CoinTable';
+import { BitcoinMetrics } from './components/BitcoinMetrics';
 import { AlertCircle } from 'lucide-react';
 
 const DEFAULT_FILTERS: Filters = {
@@ -155,6 +156,7 @@ export default function App() {
           </div>
         ) : (
           <>
+            <BitcoinMetrics />
             <SummaryCards coins={coins} />
             <FiltersBar
               filters={filters}
