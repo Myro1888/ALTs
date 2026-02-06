@@ -153,16 +153,16 @@ function fetchCBBI(){
       mvrv:getLatest(d.MVRV),
       rhodl:getLatest(d.RHODL),
       reserveRisk:getLatest(d.ReserveRisk),
-      nupl:getLatest(d.NUPL),
+      rupl:getLatest(d.RUPL),
       piCycle:getLatest(d.PiCycle),
-      twoYearMA:getLatest(d['2YearMA']),
+      twoYearMA:getLatest(d['2YMA']),
       trctop:getLatest(d.TRCTOP),
       woobull:getLatest(d.Woobull),
       confidence:getLatest(d.Confidence)
     };
     C.set('cbbi',r);
     return Object.assign({},r,{src:'CBBI'});
-  }).catch(function(){var f=C.any('cbbi');return f?Object.assign({},f.value,{src:'Cached',stale:true,ct:f.ts}):{puell:null,mvrv:null,rhodl:null,reserveRisk:null,nupl:null,piCycle:null,twoYearMA:null,trctop:null,woobull:null,confidence:null,src:'N/A',err:true}})
+  }).catch(function(){var f=C.any('cbbi');return f?Object.assign({},f.value,{src:'Cached',stale:true,ct:f.ts}):{puell:null,mvrv:null,rhodl:null,reserveRisk:null,rupl:null,piCycle:null,twoYearMA:null,trctop:null,woobull:null,confidence:null,src:'N/A',err:true}})
 }
 
 // ═══════ SCORING (All Real Data) ═══════
@@ -217,15 +217,15 @@ function score(cbbi,fg,fr,hr,maLoaded,pma){
   }
   s+=rhodlPts;b.push({n:'RHODL Ratio',v:loaded&&cbbi.rhodl!==null?(cbbi.rhodl*100).toFixed(0)+'%':'Loading...',p:rhodlPts,m:10,bg:'CBBI',cls:'badge-cbbi'});
 
-  // 5. NUPL (from CBBI) - 10 points max
-  var nuplPts=0;
-  if(loaded&&cbbi.nupl!==null){
-    if(cbbi.nupl<0.2)nuplPts=10;
-    else if(cbbi.nupl<0.35)nuplPts=7;
-    else if(cbbi.nupl<0.5)nuplPts=4;
-    else nuplPts=0;
+  // 5. RUPL - Relative Unrealized Profit/Loss (from CBBI) - 10 points max
+  var ruplPts=0;
+  if(loaded&&cbbi.rupl!==null){
+    if(cbbi.rupl<0.2)ruplPts=10;
+    else if(cbbi.rupl<0.35)ruplPts=7;
+    else if(cbbi.rupl<0.5)ruplPts=4;
+    else ruplPts=0;
   }
-  s+=nuplPts;b.push({n:'NUPL',v:loaded&&cbbi.nupl!==null?(cbbi.nupl*100).toFixed(0)+'%':'Loading...',p:nuplPts,m:10,bg:'CBBI',cls:'badge-cbbi'});
+  s+=ruplPts;b.push({n:'RUPL',v:loaded&&cbbi.rupl!==null?(cbbi.rupl*100).toFixed(0)+'%':'Loading...',p:ruplPts,m:10,bg:'CBBI',cls:'badge-cbbi'});
 
   // 6. 2-Year MA Multiplier (from CBBI) - 10 points max
   var twoYPts=0;
@@ -274,7 +274,7 @@ function score(cbbi,fg,fr,hr,maLoaded,pma){
   }
   s+=piPts;b.push({n:'Pi Cycle Top',v:loaded&&cbbi.piCycle!==null?(cbbi.piCycle*100).toFixed(0)+'%':'Loading...',p:piPts,m:5,bg:'CBBI',cls:'badge-cbbi'});
 
-  return{s:s,b:b,max:150}
+  return{s:s,b:b,max:140}
 }
 
 function sig(s){
@@ -374,9 +374,9 @@ function render(){
   var rhodlSt=cbbiStatus(cbbi.rhodl,[0.2,0.35,0.5,0.65]);
   html+=cardHTML('RHODL Ratio',cbbiLoaded&&cbbi.rhodl!==null?(cbbi.rhodl*100).toFixed(0)+'%':'--',bd[3].p,bd[3].m,rhodlSt[0],rhodlSt[1],'CBBI','badge-cbbi','Realized HODL waves ratio');
 
-  // NUPL
-  var nuplSt=cbbiStatus(cbbi.nupl,[0.2,0.35,0.5,0.65]);
-  html+=cardHTML('NUPL',cbbiLoaded&&cbbi.nupl!==null?(cbbi.nupl*100).toFixed(0)+'%':'--',bd[4].p,bd[4].m,nuplSt[0],nuplSt[1],'CBBI','badge-cbbi','Net Unrealized Profit/Loss');
+  // RUPL - Relative Unrealized Profit/Loss
+  var ruplSt=cbbiStatus(cbbi.rupl,[0.2,0.35,0.5,0.65]);
+  html+=cardHTML('RUPL',cbbiLoaded&&cbbi.rupl!==null?(cbbi.rupl*100).toFixed(0)+'%':'--',bd[4].p,bd[4].m,ruplSt[0],ruplSt[1],'CBBI','badge-cbbi','Relative Unrealized Profit/Loss');
 
   // 2-Year MA
   var twoYSt=cbbiStatus(cbbi.twoYearMA,[0.15,0.3,0.5,0.7]);
@@ -425,7 +425,7 @@ function render(){
   html+='<div style="margin-top:8px;padding:8px;background:rgba(30,41,59,0.3);border-radius:4px;font-size:9px;color:#64748b">Accuracy: 95%+ for calling cycle bottoms using CBBI on-chain metrics.</div></div></div>';
 
   // Footer
-  html+='<div class="card"><div class="section-title">Data Sources (All Free, No Signup)</div><div class="footer-section"><div>\u2022 BTC Price: Binance API (30s)</div><div>\u2022 200-Week MA: CoinGecko/Binance</div><div>\u2022 MVRV Z-Score: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Puell Multiple: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Reserve Risk: <span style="color:#10b981">CBBI API</span></div><div>\u2022 RHODL Ratio: <span style="color:#10b981">CBBI API</span></div><div>\u2022 NUPL: <span style="color:#10b981">CBBI API</span></div><div>\u2022 2-Year MA Mult: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Pi Cycle Top: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Fear & Greed: Alternative.me</div><div>\u2022 Funding Rate: Binance Futures</div><div>\u2022 Hash Ribbons: Mempool.space</div></div>';
+  html+='<div class="card"><div class="section-title">Data Sources (All Free, No Signup)</div><div class="footer-section"><div>\u2022 BTC Price: Binance API (30s)</div><div>\u2022 200-Week MA: CoinGecko/Binance</div><div>\u2022 MVRV Z-Score: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Puell Multiple: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Reserve Risk: <span style="color:#10b981">CBBI API</span></div><div>\u2022 RHODL Ratio: <span style="color:#10b981">CBBI API</span></div><div>\u2022 RUPL: <span style="color:#10b981">CBBI API</span></div><div>\u2022 2-Year MA Mult: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Pi Cycle Top: <span style="color:#10b981">CBBI API</span></div><div>\u2022 Fear & Greed: Alternative.me</div><div>\u2022 Funding Rate: Binance Futures</div><div>\u2022 Hash Ribbons: Mempool.space</div></div>';
   html+='<div class="warn-box warn-green">\u2705 All on-chain metrics are now sourced from CBBI (Colin\'s Bitcoin Bull Run Index) - real blockchain data with no estimates!</div>';
   html+='<div class="warn-box warn-red">\u26A0\uFE0F DISCLAIMER: Educational purposes only. Not financial advice. DYOR. Past performance does not guarantee future results.</div>';
   html+='<div style="text-align:center;font-size:9px;color:#475569;margin-top:8px">Bitcoin Bottom Indicator Dashboard \u2022 Powered by CBBI \u2022 100% Automated</div></div>';
